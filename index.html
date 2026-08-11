@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HH Goa 2026 — Builder ID Card Generator</title>
+  <meta name="description" content="Generate your official HH Goa 2026 Builder ID Card. Upload your photo, fill in your details, download and share on X with #FrameInGoa." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet" />
+  
+  <!-- HEIC conversion library -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="sidebar-brand">
+      <div class="brand-pill">
+        <span class="brand-dot"></span> HH GOA 2026
+      </div>
+      <h1 class="brand-title">Builder ID<br>Card Generator</h1>
+      <p class="brand-sub">Create your official event builder pass instantly</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="step-card" id="step-upload">
+      <div class="step-header">
+        <span class="step-num">1</span>
+        <h2 class="step-title">Your Photo</h2>
+      </div>
+      <div class="drop-zone" id="drop-zone"
+        role="button" tabindex="0"
+        aria-label="Upload photo"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('file-input').click()"
+        onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('file-input').click()">
+        <div id="dz-inner" class="dz-inner">
+          <div class="dz-icon">📸</div>
+          <p class="dz-text">Drop or click to upload</p>
+          <span class="dz-formats">JPG · PNG · HEIC</span>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif" style="display:none" onchange="handleFileSelect(event)" />
+    </div>
+
+    <!-- STEP 2: Adjust -->
+    <div class="step-card hidden" id="step-adjust">
+      <div class="step-header">
+        <span class="step-num">2</span>
+        <h2 class="step-title">Adjust Photo</h2>
+      </div>
+      <label class="sl-label">Zoom <span id="zoom-val" class="sl-val">100%</span></label>
+      <input type="range" id="zoom-slider" class="slider" min="100" max="300" value="100" oninput="onZoom(this.value)" />
+      
+      <label class="sl-label">Rotate <span id="rot-val" class="sl-val">0°</span></label>
+      <input type="range" id="rot-slider" class="slider" min="-180" max="180" value="0" oninput="onRotate(this.value)" />
+      
+      <button class="btn-ghost" onclick="resetAdj()">↺ Reset Photo</button>
+      <p class="drag-tip">💡 Tip: Drag directly on the card to pan the photo</p>
+    </div>
+
+    <!-- STEP 3: Card Details -->
+    <div class="step-card" id="step-details">
+      <div class="step-header">
+        <span class="step-num">3</span>
+        <h2 class="step-title">Card Details</h2>
+      </div>
+      
+      <label class="field-label" for="inp-name">Name</label>
+      <input type="text" id="inp-name" class="field-input" placeholder="Your Name" maxlength="24" oninput="render()" />
+
+      <label class="field-label" for="inp-role">Stack / Role</label>
+      <input type="text" id="inp-role" class="field-input" placeholder="e.g. Fullstack Dev / AI Engineer" maxlength="30" oninput="render()" />
+
+      <label class="field-label">Builder Title</label>
+      <div class="title-row">
+        <div class="title-display" id="title-display">Click ✨ to generate</div>
+        <button class="btn-spark" onclick="genTitle()" aria-label="Generate title">✨</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Export -->
+    <div class="step-card export-card" id="step-export">
+      <div class="step-header">
+        <span class="step-num">4</span>
+        <h2 class="step-title">Export &amp; Share</h2>
+      </div>
+      <button class="btn-primary" id="btn-download" onclick="download()" disabled>⬇ Download PNG</button>
+      <button class="btn-x" id="btn-share" onclick="shareX()" disabled>𝕏 Share on X</button>
+      <p class="export-note" id="export-note">Upload a photo to unlock downloads.</p>
+    </div>
+
+  </aside>
+
+  <!-- ── PREVIEW AREA ────────────────────────────────────── -->
+  <main class="preview-area">
+    <div class="preview-top-bar">
+      <span class="live-badge"><span class="live-dot"></span> Live Preview</span>
+      <span class="preview-info">Drag to reposition photo · Scroll to zoom</span>
+    </div>
+
+    <div class="canvas-stage" id="canvas-stage">
+      <canvas id="c"></canvas>
+    </div>
+
+    <div class="preview-footer">100% client-side processing · No image is sent to any server</div>
+  </main>
+
+  <!-- ── SHARE MODAL ─────────────────────────────────────── -->
+  <div class="modal-bg hidden" id="modal-bg" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true">
+      <button class="modal-x" onclick="closeModal()">✕</button>
+      <p class="modal-icon">𝕏</p>
+      <h3 class="modal-title">Share Your Builder Card</h3>
+      <ol class="modal-steps">
+        <li><span class="sn">1</span><div><b>Image downloaded</b> — check your device downloads.</div></li>
+        <li><span class="sn">2</span><div><b>X draft opened</b> — attach your downloaded card and post it!</div></li>
+        <li><span class="sn">3</span><div>The caption with <code>#FrameInGoa</code> is already copied to your clipboard.</div></li>
+      </ol>
+      <div class="caption-box">
+        <p class="caption-lbl">Tweet caption (copied)</p>
+        <p class="caption-txt" id="caption-txt"></p>
+      </div>
+      <button class="btn-primary" onclick="closeModal()">Got it 🤙</button>
+    </div>
+  </div>
+
+  <!-- ── TOAST ──────────────────────────────────────────── -->
+  <div class="toast" id="toast" role="alert"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
