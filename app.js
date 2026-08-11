@@ -99,6 +99,7 @@ canvas.height = CH;
 function loadImage(src) {
   return new Promise(resolve => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';   // prevent canvas taint (needed for toDataURL on Vercel)
     img.onload = () => resolve(img);
     img.onerror = () => { console.warn(`Could not load: ${src}`); resolve(null); };
     img.src = src;
@@ -583,11 +584,18 @@ function setupPointerListeners() {
 
 // ── DOWNLOAD ──────────────────────────────────────────────────
 function download() {
-  const a = document.createElement('a');
-  a.download = 'hh-goa-2026-builder-card.png';
-  a.href = canvas.toDataURL('image/png', 1.0);
-  a.click();
-  toast('Downloading your card!');
+  try {
+    const a = document.createElement('a');
+    a.download = 'hh-goa-2026-builder-card.png';
+    a.href = canvas.toDataURL('image/png', 1.0);
+    document.body.appendChild(a);   // required for Firefox / Safari
+    a.click();
+    document.body.removeChild(a);
+    toast('Downloading your card!');
+  } catch (err) {
+    console.error('Download failed:', err);
+    toast('⚠️ Download failed — try a different browser.');
+  }
 }
 
 // ── SHARE ON X ────────────────────────────────────────────────
