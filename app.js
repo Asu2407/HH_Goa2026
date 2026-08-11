@@ -131,7 +131,7 @@ async function processFile(file) {
 
     // Show adjustment options
     adjustEl.classList.remove('hidden');
-    emptyEl.classList.add('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
     btnDl.disabled = false;
     btnSh.disabled = false;
     noteEl.textContent = 'Download first, then share on X.';
